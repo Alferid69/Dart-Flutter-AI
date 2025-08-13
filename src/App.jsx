@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
-import { Header } from './components/Header';
-import { ChatWindow } from './components/ChatWindow';
-import { ChatInput } from './components/ChatInput';
-import { getTutorResponse } from './services/geminiService';
+import { useState, useEffect } from "react";
+import { Header } from "./components/Header";
+import { ChatWindow } from "./components/ChatWindow";
+import { ChatInput } from "./components/ChatInput";
+import { getTutorResponse } from "./services/geminiService";
+import { Analytics } from "@vercel/analytics/react";
 
 // The key we'll use to save and retrieve the chat history in localStorage.
-const CHAT_HISTORY_KEY = 'flutter_tutor_history';
+const CHAT_HISTORY_KEY = "flutter_tutor_history";
 
 function App() {
   // 1. LOAD a aINITAL STATE FROM LOCALSTORAGE
@@ -18,9 +19,13 @@ function App() {
     } else {
       return [
         {
-          role: 'model',
-          parts: [{ text: "Hello! I'm your personal Dart and Flutter tutor. What would you like to learn about first?" }]
-        }
+          role: "model",
+          parts: [
+            {
+              text: "Hello! I'm your personal Dart and Flutter tutor. What would you like to learn about first?",
+            },
+          ],
+        },
       ];
     }
   });
@@ -34,10 +39,9 @@ function App() {
     localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
   }, [messages]);
 
-
   const handleSend = async (userMessage) => {
-    const newUserMessage = { role: 'user', parts: [{ text: userMessage }] };
-    
+    const newUserMessage = { role: "user", parts: [{ text: userMessage }] };
+
     // We get the latest messages directly from the state-updating function
     // to ensure we have the most current history for the API call.
     const updatedMessages = [...messages, newUserMessage];
@@ -45,18 +49,21 @@ function App() {
     setIsLoading(true);
 
     try {
-      const chatHistory = updatedMessages.slice(0, -1).map(msg => ({ // Exclude the new user message we just added
-        role: msg.role === 'user' ? 'user' : 'model',
-        parts: msg.parts
+      const chatHistory = updatedMessages.slice(0, -1).map((msg) => ({
+        // Exclude the new user message we just added
+        role: msg.role === "user" ? "user" : "model",
+        parts: msg.parts,
       }));
 
       const aiResponseText = await getTutorResponse(userMessage, chatHistory);
-      const newAiMessage = { role: 'model', parts: [{ text: aiResponseText }] };
+      const newAiMessage = { role: "model", parts: [{ text: aiResponseText }] };
       setMessages([...updatedMessages, newAiMessage]);
-
     } catch (error) {
       console.error("Failed to get AI response:", error);
-      const errorMessage = { role: 'model', parts: [{ text: "Sorry, I encountered an error. Please try again." }] };
+      const errorMessage = {
+        role: "model",
+        parts: [{ text: "Sorry, I encountered an error. Please try again." }],
+      };
       setMessages([...updatedMessages, errorMessage]);
     } finally {
       setIsLoading(false);
@@ -70,6 +77,7 @@ function App() {
         <ChatWindow messages={messages} isLoading={isLoading} />
         <ChatInput onSend={handleSend} isLoading={isLoading} />
       </main>
+      <Analytics />
     </div>
   );
 }
